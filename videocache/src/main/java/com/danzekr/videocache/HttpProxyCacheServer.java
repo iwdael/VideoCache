@@ -13,7 +13,6 @@ import com.danzekr.videocache.headers.HeaderInjector;
 import com.danzekr.videocache.sourcestorage.SourceInfoStorage;
 import com.danzekr.videocache.sourcestorage.SourceInfoStorageFactory;
 
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -450,8 +449,6 @@ public class HttpProxyCacheServer {
             return this;
         }
 
-
-        @NotNull
         public Builder sourceCreator(SourceCreator sourceCreator) {
             this.sourceCreator = sourceCreator;
             return this;
