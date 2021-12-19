@@ -6,7 +6,7 @@ android {
     compileSdkVersion buidConfig.compileSdkVersion
 
     defaultConfig {
-        applicationId "com.danzekr.videocache"
+        applicationId "com.iwdael.videocache"
         minSdkVersion buidConfig.minSdkVersion
         targetSdkVersion buidConfig.targetSdkVersion
         versionCode buidConfig.versionCode
