@@ -1,4 +1,4 @@
-package com.iwdael.videocache;
+package com.iwdael.videocache.example;
 
 import androidx.appcompat.app.AppCompatActivity;
 

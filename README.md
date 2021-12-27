@@ -100,6 +100,12 @@ public class UserAgentHeadersInjector implements HeaderInjector {
     public Map<String, String> addHeaders(String url) {
         return Maps.newHashMap("User-Agent", "Cool app v1.1");
     }
+
+    //header key是否有效
+    @Override
+    public Boolean filter(String url, String key) {
+        return null;
+    }
 }
 ```
 ```
@@ -110,6 +116,65 @@ private HttpProxyCacheServer newProxy() {
 }
 
 ```
+
+### 自定义网络视频加载
+自定义视频下载
+```
+public class MySource implements Source {
+    @Override
+    public void open(long offset) throws ProxyCacheException {
+
+    }
+
+    @Override
+    public long length() throws ProxyCacheException {
+        return 0;
+    }
+
+    @Override
+    public int read(byte[] buffer) throws ProxyCacheException {
+        return 0;
+    }
+
+    @Override
+    public void close() throws ProxyCacheException {
+
+    }
+
+    @Override
+    public String getMime() throws ProxyCacheException {
+        return null;
+    }
+
+    @Override
+    public String getUrl() {
+        return null;
+    }
+}
+
+```
+
+```
+public class MySourceCreator implements SourceCreator<MySource> {
+    @Override
+    public MySource create(String url, SourceInfoStorage sourceInfoStorage, Map<String, String> headers) {
+        return null;
+    }
+
+    @Override
+    public MySource create(MySource source) {
+        return null;
+    }
+}
+```
+```
+private HttpProxyCacheServer newProxy() {
+    return new HttpProxyCacheServer.Builder(this)
+            .sourceCreator(new MySourceCreator())
+            .build();
+}
+```
+
 ## 如何配置
 将本仓库引入你的项目:
 ### Step 1. 添加JitPack仓库到Build文件

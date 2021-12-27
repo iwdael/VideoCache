@@ -17,5 +17,5 @@ android {
 dependencies {
     implementation dependent.appcompat
     implementation dependent.constraintlayout
-
+    implementation project(":videocache")
 }

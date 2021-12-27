@@ -188,7 +188,6 @@ public class HttpUrlSource implements Source {
     private void injectCustomHeaders(HttpURLConnection connection) {
         Map<String, String> extraHeaders = headers;
         for (Map.Entry<String, String> header : extraHeaders.entrySet()) {
-            Log.v("dzq", "inject------>" + header.getKey() + "<>" + header.getValue());
             connection.setRequestProperty(header.getKey(), header.getValue());
         }
     }
