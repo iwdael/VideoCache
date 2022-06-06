@@ -1,6 +1,7 @@
 package com.iwdael.videocache;
 
 import java.io.File;
+import java.util.List;
 
 /**
  * Cache for proxy.
@@ -9,17 +10,23 @@ import java.io.File;
  */
 public interface Cache {
 
-    long available() throws ProxyCacheException;
+    String key();
 
-    int read(byte[] buffer, long offset, int length) throws ProxyCacheException;
+    int read(byte[] buffer, long pointer, int offset, int length) throws ProxyCacheException;
 
-    void append(byte[] data, int length) throws ProxyCacheException;
+    void write(byte[] data, long pointer, int offset, int length) throws ProxyCacheException;
 
     void close() throws ProxyCacheException;
 
     void complete() throws ProxyCacheException;
 
     boolean isCompleted();
+
+    void putPatch(long start, long end);
+
+    List<CachePatch> externalPatch(long start, long end);
+
+    boolean readyPatch(long len);
 
     File getFile();
 }

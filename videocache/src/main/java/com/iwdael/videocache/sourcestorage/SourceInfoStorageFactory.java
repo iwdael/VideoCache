@@ -3,17 +3,17 @@ package com.iwdael.videocache.sourcestorage;
 import android.content.Context;
 
 /**
- * Simple factory for {@link SourceInfoStorage}.
+ * Simple factory for {@link Storage}.
  *
  * @author Alexey Danilov (danikula@gmail.com).
  */
 public class SourceInfoStorageFactory {
 
-    public static SourceInfoStorage newSourceInfoStorage(Context context) {
-        return new DatabaseSourceInfoStorage(context);
+    public static Storage newSourceInfoStorage(Context context) {
+        return new DataStorage(context);
     }
 
-    public static SourceInfoStorage newEmptySourceInfoStorage() {
-        return new NoSourceInfoStorage();
+    public static Storage newEmptySourceInfoStorage() {
+        return new NoStorage();
     }
 }

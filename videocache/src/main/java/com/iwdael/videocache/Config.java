@@ -3,7 +3,7 @@ package com.iwdael.videocache;
 import com.iwdael.videocache.file.DiskUsage;
 import com.iwdael.videocache.file.FileNameGenerator;
 import com.iwdael.videocache.headers.HeaderInjector;
-import com.iwdael.videocache.sourcestorage.SourceInfoStorage;
+import com.iwdael.videocache.sourcestorage.Storage;
 
 import java.io.File;
 
@@ -12,20 +12,20 @@ import java.io.File;
  *
  * @author Alexey Danilov (danikula@gmail.com).
  */
-class Config {
+public class Config {
 
     public final File cacheRoot;
     public final FileNameGenerator fileNameGenerator;
     public final DiskUsage diskUsage;
-    public final SourceInfoStorage sourceInfoStorage;
+    public final Storage storage;
     public final HeaderInjector headerInjector;
-    public final SourceCreator sourceCreator;
+    public final SourceCreator<Source> sourceCreator;
 
-    Config(File cacheRoot, FileNameGenerator fileNameGenerator, DiskUsage diskUsage, SourceInfoStorage sourceInfoStorage, HeaderInjector headerInjector, SourceCreator sourceCreator) {
+    Config(File cacheRoot, FileNameGenerator fileNameGenerator, DiskUsage diskUsage, Storage storage, HeaderInjector headerInjector, SourceCreator<Source> sourceCreator) {
         this.cacheRoot = cacheRoot;
         this.fileNameGenerator = fileNameGenerator;
         this.diskUsage = diskUsage;
-        this.sourceInfoStorage = sourceInfoStorage;
+        this.storage = storage;
         this.headerInjector = headerInjector;
         this.sourceCreator = sourceCreator;
     }

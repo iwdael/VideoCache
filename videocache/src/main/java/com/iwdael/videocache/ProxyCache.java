@@ -3,6 +3,7 @@ package com.iwdael.videocache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.iwdael.videocache.Preconditions.checkNotNull;
@@ -17,7 +18,7 @@ import static com.iwdael.videocache.Preconditions.checkNotNull;
  * @author Alexey Danilov (danikula@gmail.com).
  */
 class ProxyCache {
-
+    public static final String TAG = "cache";
     private static final Logger LOG = LoggerFactory.getLogger("ProxyCache");
     private static final int MAX_READ_SOURCE_ATTEMPTS = 1;
 
@@ -36,15 +37,14 @@ class ProxyCache {
         this.readSourceErrorsCount = new AtomicInteger();
     }
 
-    public int read(byte[] buffer, long offset, int length) throws ProxyCacheException {
-        ProxyCacheUtils.assertBuffer(buffer, offset, length);
-
-        while (!cache.isCompleted() && cache.available() < (offset + length) && !stopped) {
-            readSourceAsync();
+    public int read(byte[] buffer, long pointer, int length) throws ProxyCacheException {
+        ProxyCacheUtils.assertBuffer(buffer, pointer, length);
+        while (!cache.isCompleted() && !cache.externalPatch(pointer, pointer + length).isEmpty() && !stopped) {
+            readSourceAsync(pointer);
             waitForSourceData();
             checkReadSourceErrorsCount();
         }
-        int read = cache.read(buffer, offset, length);
+        int read = cache.read(buffer, pointer, 0, length);
         if (cache.isCompleted() && percentsAvailable != 100) {
             percentsAvailable = 100;
             onCachePercentsAvailableChanged(100);
@@ -75,10 +75,10 @@ class ProxyCache {
         }
     }
 
-    private synchronized void readSourceAsync() throws ProxyCacheException {
+    private synchronized void readSourceAsync(long pointer) throws ProxyCacheException {
         boolean readingInProgress = sourceReaderThread != null && sourceReaderThread.getState() != Thread.State.TERMINATED;
         if (!stopped && !cache.isCompleted() && !readingInProgress) {
-            sourceReaderThread = new Thread(new SourceReaderRunnable(), "Source reader for " + source);
+            sourceReaderThread = new Thread(new SourceReaderRunnable(pointer), "Source reader for " + source);
             sourceReaderThread.start();
         }
     }
@@ -115,24 +115,27 @@ class ProxyCache {
     protected void onCachePercentsAvailableChanged(int percentsAvailable) {
     }
 
-    private void readSource() {
-        long sourceAvailable = -1;
-        long offset = 0;
+    private void readSource(long pointer) {
         try {
-            offset = cache.available();
-            source.open(offset);
-            sourceAvailable = source.length();
+            long sourceLength = source.length();
+            List<CachePatch> externals = cache.externalPatch(pointer, sourceLength);
             byte[] buffer = new byte[ProxyCacheUtils.DEFAULT_BUFFER_SIZE];
-            int readBytes;
-            while ((readBytes = source.read(buffer)) != -1) {
-                synchronized (stopLock) {
-                    if (isStopped()) {
-                        return;
+            int r;
+            for (CachePatch external : externals) {
+                pointer = external.start;
+                source.open(pointer);
+                while ((r = source.read(buffer)) != -1) {
+                    synchronized (stopLock) {
+                        if (isStopped()) {
+                            return;
+                        }
+                        cache.write(buffer, pointer, 0, r);
+                        cache.putPatch(pointer, pointer + r);
                     }
-                    cache.append(buffer, readBytes);
+                    pointer += r;
+                    notifyNewCacheDataAvailable(pointer, sourceLength);
+                    if (pointer >= external.end) break;
                 }
-                offset += readBytes;
-                notifyNewCacheDataAvailable(offset, sourceAvailable);
             }
             tryComplete();
             onSourceRead();
@@ -141,7 +144,7 @@ class ProxyCache {
             onError(e);
         } finally {
             closeSource();
-            notifyNewCacheDataAvailable(offset, sourceAvailable);
+            notifyNewCacheDataAvailable(pointer, -1);
         }
     }
 
@@ -153,7 +156,7 @@ class ProxyCache {
 
     private void tryComplete() throws ProxyCacheException {
         synchronized (stopLock) {
-            if (!isStopped() && cache.available() == source.length()) {
+            if (!isStopped() && cache.readyPatch(source.length())) {
                 cache.complete();
             }
         }
@@ -181,10 +184,15 @@ class ProxyCache {
     }
 
     private class SourceReaderRunnable implements Runnable {
+        private final long pointer;
+
+        public SourceReaderRunnable(long pointer) {
+            this.pointer = pointer;
+        }
 
         @Override
         public void run() {
-            readSource();
+            readSource(pointer);
         }
     }
 }

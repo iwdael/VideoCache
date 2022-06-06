@@ -47,15 +47,14 @@ class HttpProxyCache extends ProxyCache {
     private boolean isUseCache(GetRequest request) throws ProxyCacheException {
         long sourceLength = source.length();
         boolean sourceLengthKnown = sourceLength > 0;
-        long cacheAvailable = cache.available();
         // do not use cache for partial requests which too far from available cache. It seems user seek video.
-        return !sourceLengthKnown || !request.partial || request.rangeOffset <= cacheAvailable + sourceLength * NO_CACHE_BARRIER;
+        return !sourceLengthKnown || !request.partial;
     }
 
     private String newResponseHeaders(GetRequest request) throws IOException, ProxyCacheException {
         String mime = source.getMime();
         boolean mimeKnown = !TextUtils.isEmpty(mime);
-        long length = cache.isCompleted() ? cache.available() : source.length();
+        long length = source.length();
         boolean lengthKnown = length >= 0;
         long contentLength = request.partial ? length - request.rangeOffset : length;
         boolean addRange = lengthKnown && request.partial;
@@ -71,16 +70,18 @@ class HttpProxyCache extends ProxyCache {
 
     private void responseWithCache(OutputStream out, long offset) throws ProxyCacheException, IOException {
         byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];
-        int readBytes;
-        while ((readBytes = read(buffer, offset, buffer.length)) != -1) {
-            out.write(buffer, 0, readBytes);
-            offset += readBytes;
+        long pointer = offset;
+        int r;
+        while ((r = read(buffer, pointer, buffer.length)) != -1) {
+            out.write(buffer, 0, r);
+            pointer += r;
+            out.flush();
         }
-        out.flush();
     }
 
     private void responseWithoutCache(OutputStream out, long offset) throws ProxyCacheException, IOException {
-        Source newSourceNoCache = config.sourceCreator.create(this.source);
+        SourceWrapper sourceWrapper = (SourceWrapper) this.source;
+        Source newSourceNoCache = sourceWrapper.newSelf();
         try {
             newSourceNoCache.open((int) offset);
             byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];

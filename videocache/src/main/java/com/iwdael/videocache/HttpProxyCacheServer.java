@@ -10,7 +10,7 @@ import com.iwdael.videocache.file.TotalCountLruDiskUsage;
 import com.iwdael.videocache.file.TotalSizeLruDiskUsage;
 import com.iwdael.videocache.headers.EmptyHeadersInjector;
 import com.iwdael.videocache.headers.HeaderInjector;
-import com.iwdael.videocache.sourcestorage.SourceInfoStorage;
+import com.iwdael.videocache.sourcestorage.Storage;
 import com.iwdael.videocache.sourcestorage.SourceInfoStorageFactory;
 
 import org.slf4j.Logger;
@@ -175,7 +175,7 @@ public class HttpProxyCacheServer {
 
         shutdownClients();
 
-        config.sourceInfoStorage.release();
+        config.storage.release();
 
         waitConnectionThread.interrupt();
         try {
@@ -357,12 +357,12 @@ public class HttpProxyCacheServer {
         private File cacheRoot;
         private FileNameGenerator fileNameGenerator;
         private DiskUsage diskUsage;
-        private SourceInfoStorage sourceInfoStorage;
+        private Storage storage;
         private HeaderInjector headerInjector;
         private SourceCreator sourceCreator;
 
         public Builder(Context context) {
-            this.sourceInfoStorage = SourceInfoStorageFactory.newSourceInfoStorage(context);
+            this.storage = SourceInfoStorageFactory.newSourceInfoStorage(context);
             this.cacheRoot = StorageUtils.getIndividualCacheDirectory(context);
             this.diskUsage = new TotalSizeLruDiskUsage(DEFAULT_MAX_SIZE);
             this.fileNameGenerator = new Md5FileNameGenerator();
@@ -465,7 +465,7 @@ public class HttpProxyCacheServer {
         }
 
         private Config buildConfig() {
-            return new Config(cacheRoot, fileNameGenerator, diskUsage, sourceInfoStorage, headerInjector, sourceCreator);
+            return new Config(cacheRoot, fileNameGenerator, diskUsage, storage, headerInjector, sourceCreator);
         }
 
     }

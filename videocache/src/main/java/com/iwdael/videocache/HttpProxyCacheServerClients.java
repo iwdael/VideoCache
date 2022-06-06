@@ -82,9 +82,9 @@ final class HttpProxyCacheServerClients {
 
     private HttpProxyCache newHttpProxyCache(GetRequest request) throws ProxyCacheException {
         Map<String, String> headers = newHttpConnectionHeader(request);
-        Source source  = config.sourceCreator.create(url, config.sourceInfoStorage, headers);
-        FileCache cache = new FileCache(config.generateCacheFile(url), config.diskUsage);
-        HttpProxyCache httpProxyCache = new HttpProxyCache(source, cache,config);
+        Source source = new SourceWrapper(url, headers, config);
+        FileCache cache = new FileCache(config.generateCacheFile(url), config, config.fileNameGenerator.generate(url));
+        HttpProxyCache httpProxyCache = new HttpProxyCache(source, cache, config);
         httpProxyCache.registerCacheListener(uiCacheListener);
         return httpProxyCache;
     }
