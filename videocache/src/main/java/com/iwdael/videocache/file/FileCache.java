@@ -44,13 +44,6 @@ public class FileCache implements Cache {
                 this.patches = new ArrayList<>();
                 config.storage.clearPatch(key);
             } else {
-                if (this.file.getName().equals("1f5008d6559e95ed8b3442a65c276d52")) {
-                    File tmp = new File(file.getParentFile(), file.getName() + TEMP_POSTFIX);
-                    this.file.renameTo(tmp);
-                    this.file = tmp;
-                    config.storage.clearPatch(key);
-                    config.storage.putPatch(key, new CachePatch(key, 10000, 50000));
-                }
                 this.patches = config.storage.getPatch(key);
                 this.patches.forEach(patch -> patch.isLocal = true);
             }
