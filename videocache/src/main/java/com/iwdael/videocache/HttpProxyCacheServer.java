@@ -1,5 +1,8 @@
 package com.iwdael.videocache;
 
+import static com.iwdael.videocache.Preconditions.checkAllNotNull;
+import static com.iwdael.videocache.Preconditions.checkNotNull;
+
 import android.content.Context;
 import android.net.Uri;
 
@@ -10,8 +13,8 @@ import com.iwdael.videocache.file.TotalCountLruDiskUsage;
 import com.iwdael.videocache.file.TotalSizeLruDiskUsage;
 import com.iwdael.videocache.headers.EmptyHeadersInjector;
 import com.iwdael.videocache.headers.HeaderInjector;
-import com.iwdael.videocache.sourcestorage.Storage;
 import com.iwdael.videocache.sourcestorage.SourceInfoStorageFactory;
+import com.iwdael.videocache.sourcestorage.Storage;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,9 +31,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-import static com.iwdael.videocache.Preconditions.checkAllNotNull;
-import static com.iwdael.videocache.Preconditions.checkNotNull;
 
 /**
  * Simple lightweight proxy server with file caching support that handles HTTP requests.
@@ -72,15 +72,15 @@ public class HttpProxyCacheServer {
     private HttpProxyCacheServer(Config config) {
         this.config = checkNotNull(config);
         try {
-            InetAddress inetAddress = InetAddress.getByName(PROXY_HOST);
+            InetAddress inetAddress = InetAddress.getByName(config.host);
             this.serverSocket = new ServerSocket(0, 8, inetAddress);
             this.port = serverSocket.getLocalPort();
-            IgnoreHostProxySelector.install(PROXY_HOST, port);
+            IgnoreHostProxySelector.install(config.host, port);
             CountDownLatch startSignal = new CountDownLatch(1);
             this.waitConnectionThread = new Thread(new WaitRequestsRunnable(startSignal));
             this.waitConnectionThread.start();
             startSignal.await(); // freeze thread, wait for server starts
-            this.pinger = new Pinger(PROXY_HOST, port);
+            this.pinger = new Pinger(config.host, port);
             LOG.info("Proxy cache server started. Is it alive? " + isAlive());
         } catch (IOException | InterruptedException e) {
             socketProcessor.shutdown();
@@ -192,7 +192,7 @@ public class HttpProxyCacheServer {
     }
 
     private String appendToProxyUrl(String url) {
-        return String.format(Locale.US, "http://%s:%d/%s", PROXY_HOST, port, ProxyCacheUtils.encode(url));
+        return String.format(Locale.US, "http://%s:%d/%s", config.host, port, ProxyCacheUtils.encode(url));
     }
 
     private File getCacheFile(String url) {
@@ -360,6 +360,7 @@ public class HttpProxyCacheServer {
         private Storage storage;
         private HeaderInjector headerInjector;
         private SourceCreator sourceCreator;
+        private String host;
 
         public Builder(Context context) {
             this.storage = SourceInfoStorageFactory.newSourceInfoStorage(context);
@@ -368,6 +369,7 @@ public class HttpProxyCacheServer {
             this.fileNameGenerator = new Md5FileNameGenerator();
             this.headerInjector = new EmptyHeadersInjector();
             this.sourceCreator = new DefaultSourceCreator();
+            this.host = PROXY_HOST;
         }
 
         /**
@@ -454,6 +456,11 @@ public class HttpProxyCacheServer {
             return this;
         }
 
+        public Builder host(String host) {
+            this.host = host;
+            return this;
+        }
+
         /**
          * Builds new instance of {@link HttpProxyCacheServer}.
          *
@@ -465,7 +472,7 @@ public class HttpProxyCacheServer {
         }
 
         private Config buildConfig() {
-            return new Config(cacheRoot, fileNameGenerator, diskUsage, storage, headerInjector, sourceCreator);
+            return new Config(cacheRoot, fileNameGenerator, diskUsage, storage, headerInjector, sourceCreator, host);
         }
 
     }

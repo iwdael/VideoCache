@@ -20,14 +20,16 @@ public class Config {
     public final Storage storage;
     public final HeaderInjector headerInjector;
     public final SourceCreator<Source> sourceCreator;
+    public final String host;
 
-    Config(File cacheRoot, FileNameGenerator fileNameGenerator, DiskUsage diskUsage, Storage storage, HeaderInjector headerInjector, SourceCreator<Source> sourceCreator) {
+    Config(File cacheRoot, FileNameGenerator fileNameGenerator, DiskUsage diskUsage, Storage storage, HeaderInjector headerInjector, SourceCreator<Source> sourceCreator, String host) {
         this.cacheRoot = cacheRoot;
         this.fileNameGenerator = fileNameGenerator;
         this.diskUsage = diskUsage;
         this.storage = storage;
         this.headerInjector = headerInjector;
         this.sourceCreator = sourceCreator;
+        this.host = host;
     }
 
     File generateCacheFile(String url) {
